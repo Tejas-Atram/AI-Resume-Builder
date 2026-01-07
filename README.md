@@ -119,7 +119,7 @@ A quick overview of the main API routes available:
 ## �‍💻 Author
 
 **Dheeraj Sai**
-- GitHub: [@DheerajSai24](https://github.com/DheerajSai24)
+- GitHub: [@DheerajSai6](https://github.com/DheerajSai6)
 
 ## 🙏 Acknowledgements
 
