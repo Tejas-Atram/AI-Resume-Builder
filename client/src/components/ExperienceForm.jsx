@@ -41,10 +41,18 @@ const ExperienceForm = ({ data, onChange }) => {
   const generateDesc = async (index) => {
     setIsGenerating(index);
     const experience = data[index];
+    
+    // Check if there's at least some content to enhance
+    if (!experience.description && !experience.position && !experience.company) {
+      toast.error("Please add at least a job description, position, or company name");
+      setIsGenerating(-1);
+      return;
+    }
+    
     const prompt = `Enhance this job description: ${
-      experience.description
-    } for the postion of ${experience.position || "fresher"} at ${
-      experience.company
+      experience.description || "No description provided"
+    } for the position of ${experience.position || "fresher"} at ${
+      experience.company || "a company"
     }.`;
 
     try {
@@ -62,7 +70,7 @@ const ExperienceForm = ({ data, onChange }) => {
     } catch (error) {
       console.error("❌ API Error:", error);
       console.error("❌ Error response:", error.response);
-      toast.error(error.message);
+      toast.error(error?.response?.data?.message || error.message || "Failed to enhance description");
     } finally {
       setIsGenerating(-1);
     }
@@ -169,12 +177,8 @@ const ExperienceForm = ({ data, onChange }) => {
                     onClick={() => {
                       generateDesc(index);
                     }}
-                    disabled={
-                      isGenerating === index ||
-                      !experience.position ||
-                      !experience.company
-                    }
-                    className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors disabled::opacity-50"
+                    disabled={isGenerating === index}
+                    className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isGenerating === index ? (
                       <>

@@ -12,7 +12,7 @@ const ProfessionalSummary = ({ data, onChange, setResumeData }) => {
   const generateSummary = async () => {
     try {
       setIsGenerating(true);
-      const prompt = `enhance my proffesional summary: ${data}`;
+      const prompt = `enhance my professional summary: ${data || "Create a professional summary for a resume"}`;
       console.log("🔵 Making API call to:", import.meta.env.VITE_BASE_URL);
       console.log("🔵 Endpoint: /api/ai/enhance-pro-sum");
       console.log("🔵 Token:", token ? "Present" : "Missing");
@@ -31,7 +31,7 @@ const ProfessionalSummary = ({ data, onChange, setResumeData }) => {
     } catch (error) {
       console.error("❌ API Error:", error);
       console.error("❌ Error response:", error.response);
-      toast.error(error?.response?.data?.message || error.message);
+      toast.error(error?.response?.data?.message || error.message || "Failed to enhance summary");
     } finally {
       setIsGenerating(false);
     }
@@ -52,7 +52,7 @@ const ProfessionalSummary = ({ data, onChange, setResumeData }) => {
         <button
           disabled={isGenerating}
           onClick={generateSummary}
-          className="flex items-center gap-2 px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isGenerating ? (
             <>
