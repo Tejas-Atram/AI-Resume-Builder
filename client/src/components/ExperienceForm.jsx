@@ -41,14 +41,20 @@ const ExperienceForm = ({ data, onChange }) => {
   const generateDesc = async (index) => {
     setIsGenerating(index);
     const experience = data[index];
-    
+
     // Check if there's at least some content to enhance
-    if (!experience.description && !experience.position && !experience.company) {
-      toast.error("Please add at least a job description, position, or company name");
+    if (
+      !experience.description &&
+      !experience.position &&
+      !experience.company
+    ) {
+      toast.error(
+        "Please add at least a job description, position, or company name",
+      );
       setIsGenerating(-1);
       return;
     }
-    
+
     const prompt = `Enhance this job description: ${
       experience.description || "No description provided"
     } for the position of ${experience.position || "fresher"} at ${
@@ -59,18 +65,22 @@ const ExperienceForm = ({ data, onChange }) => {
       console.log("🔵 Making API call to:", import.meta.env.VITE_BASE_URL);
       console.log("🔵 Endpoint: /api/ai/enhance-job-desc");
       console.log("🔵 Token:", token ? "Present" : "Missing");
-      
+
       const { data } = await api.post(
         "/api/ai/enhance-job-desc",
         { userContent: prompt },
-        { headers: { Authorization: token } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       updateExperience(index, "description", data.aiContent);
       toast.success("Description enhanced successfully!");
     } catch (error) {
       console.error("❌ API Error:", error);
       console.error("❌ Error response:", error.response);
-      toast.error(error?.response?.data?.message || error.message || "Failed to enhance description");
+      toast.error(
+        error?.response?.data?.message ||
+          error.message ||
+          "Failed to enhance description",
+      );
     } finally {
       setIsGenerating(-1);
     }
@@ -158,7 +168,7 @@ const ExperienceForm = ({ data, onChange }) => {
                     updateExperience(
                       index,
                       "is_current",
-                      e.target.checked ? true : false
+                      e.target.checked ? true : false,
                     );
                   }}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"

@@ -1,18 +1,32 @@
 @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap");
 @import "tailwindcss";
 
+/* In Tailwind v4, we use the @variant utility to define class-based dark mode */
+@variant dark (&:where(.dark, .dark *));
+
 * {
-  font-family: "Outfit", sans-serif;
+    font-family: "Outfit", sans-serif;
 }
 
 @layer base {
-  button {
-    @apply cursor-pointer;
-  }
-  input:not([type="checkbox"]) {
-    @apply outline-none focus:ring border border-gray-300 focus:ring-blue-500 focus:border-blue-500 rounded-lg;
-  }
-  textarea {
-    @apply outline-none focus:ring border border-gray-300 focus:ring-blue-500 focus:border-blue-500 rounded-lg resize-none;
-  }
+    /* Set default colors for the whole body to handle theme transitions smoothly */
+    body {
+        @apply bg-white text-slate-900 transition-colors duration-300;
+    }
+
+    .dark body {
+        @apply bg-slate-950 text-slate-100;
+    }
+
+    button {
+        @apply cursor-pointer;
+    }
+
+    /* Updated inputs/textareas to be dark-mode aware by default */
+    input:not([type="checkbox"]),
+    textarea {
+        @apply outline-none focus:ring border border-gray-300 rounded-lg transition-all
+           dark:bg-slate-800 dark:border-slate-700 dark:text-white dark:focus:ring-blue-600;
+        @apply focus:ring-blue-500 focus:border-blue-500;
+    }
 }

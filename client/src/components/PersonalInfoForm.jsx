@@ -6,7 +6,6 @@ import {
   Phone,
   User,
 } from "lucide-react";
-
 const PersonalInfoForm = ({
   data,
   onChange,
@@ -41,7 +40,6 @@ const PersonalInfoForm = ({
     { key: "linkedin", label: "LinkedIn Profile", icon: Linkedin, type: "url" },
     { key: "website", label: "Personal Website", icon: Globe, type: "url" },
   ];
-
   return (
     <div>
       <h3 className="text-lg font-semibold text-gray-900">
@@ -91,7 +89,6 @@ const PersonalInfoForm = ({
           </div>
         )}
       </div>
-
       {/* list of input fields : mapping*/}
       {fields.map((field) => {
         const Icon = field.icon;
@@ -116,5 +113,4 @@ const PersonalInfoForm = ({
     </div>
   );
 };
-
 export default PersonalInfoForm;

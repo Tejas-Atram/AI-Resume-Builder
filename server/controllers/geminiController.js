@@ -1,135 +1,208 @@
-import gemini from "../configs/gemini.js";
+import groq from "../configs/gemini.js"; // This is your Groq instance
 import Resume from "../models/Resume.js";
 
-// controller for enhancing a resume's professional summary
-// POST: /api/ai/enhance-pro-sum
+/**
+ * 1. Enhance Professional Summary
+ * Refines raw text into 1-2 powerful sentences.
+ */
 export const enhanceProfessionalSummary = async (req, res) => {
   try {
-    console.log("🔵 Enhance Summary Request Received");
-    console.log("Request body:", req.body);
     const { userContent } = req.body;
+
     if (!userContent) {
-      console.log("❌ Missing userContent");
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    console.log("🚀 Calling Gemini API...");
-    const prompt = `You are a professional resume writer specializing in crafting impactful and ATS-optimized summaries. Your task is to refine and enhance the candidate's professional summary into 1-2 powerful sentences that effectively highlight key technical skills, relevant experience, and career goals. The output must be concise, compelling, and ready for inclusion in a modern resume — return only the improved summary text only without any explanations or options.
+    const result = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a professional resume writer. Refine the text into 1-2 powerful sentences. Return ONLY the improved text.",
+        },
+        {
+          role: "user",
+          content: userContent,
+        },
+      ],
+      model: "llama-3.3-70b-versatile",
+    });
 
-User's summary: ${userContent}`;
-
-    const aiContent = await gemini.generateContent(prompt);
-    console.log("✅ AI Response received");
-    return res.status(200).json({ aiContent });
+    const aiText = result.choices[0]?.message?.content || "";
+    return res.status(200).json({ aiContent: aiText.trim() });
   } catch (error) {
-    console.log("❌ Error:", error.message);
-    console.log("❌ Full Error:", JSON.stringify(error, null, 2));
-    return res.status(400).json({ message: error.message, details: error.toString() });
+    console.error("❌ Enhance Summary Error:", error.message);
+    if (!res.headersSent) {
+      return res.status(500).json({ message: "AI Enhancement failed" });
+    }
   }
 };
 
-// Enhance the job-desc.
-// POST: /api/ai/enhance-job-desc
+/**
+ * 2. Enhance Job Description
+ * Rewrites job bullet points to be action-oriented.
+ */
 export const enhanceJobDesc = async (req, res) => {
   try {
-    console.log("🔵 Enhance Job Description Request Received");
-    console.log("Request body:", req.body);
     const { userContent } = req.body;
     if (!userContent) {
-      console.log("❌ Missing userContent");
-      return res.status(400).json({ message: "Missing required fields" });
+      return res.status(400).json({ message: "Missing content to enhance" });
     }
 
-    console.log("🚀 Calling Gemini API...");
-    const prompt = `You are an expert resume writer. Your task is to enhance the job description section of a resume by rewriting it into 1-2 concise, impactful sentences that emphasize key responsibilities, achievements, and measurable results. Use strong action verbs, maintain an ATS-friendly structure, and ensure the output is professional and results-driven. Return only the rewritten job description text without any explanations or options.
+    // ... inside uploadResume function ...
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a professional data extractor. Convert raw text into a clean JSON object. Do not include prose.",
+        },
+        {
+          role: "user",
+          content: `Extract from this text: "${resumeText}"
+              Return strictly as JSON with these EXACT keys:
+              {
+                "personal_info": {
+                   "full_name": "string",
+                   "email": "string",
+                   "phone": "string",
+                   "location": "string",
+                   "profession": "string"
+                },
+                "professional_summary": "string",
+                "skills": ["string"],
+                "experience": [{
+                   "company": "string",
+                   "position": "string",
+                   "description": "string"
+                }],
+                "education": [{
+                   "institution": "string",
+                   "degree": "string",
+                   "field": "string"
+                }]
+              }`,
+        },
+      ],
+      model: "llama-3.3-70b-versatile",
+      response_format: { type: "json_object" },
+    });
+    // ... rest of the code ...
 
-User's job description: ${userContent}`;
-
-    const aiContent = await gemini.generateContent(prompt);
-    console.log("✅ AI Response received");
-    return res.status(200).json({ aiContent });
+    const aiText = completion.choices[0]?.message?.content || "";
+    return res.status(200).json({ aiContent: aiText.trim() });
   } catch (error) {
-    return res.status(400).json({ message: error.message });
+    console.error("❌ Enhance JD Error:", error.message);
+    if (!res.headersSent) {
+      return res.status(500).json({ message: "AI Enhancement failed" });
+    }
   }
 };
 
-// controller for uploading a resume to the DataBase
-// POST: /api/ai/upload-resume
-
+/**
+ * 3. Upload and Parse Resume
+ * Extracts raw PDF text into a structured database object.
+ */
 export const uploadResume = async (req, res) => {
   try {
     const { resumeText, title } = req.body;
     const userId = req.userId;
 
     if (!resumeText) {
-      return res(400).json({ message: "Missing required field" });
+      return res.status(400).json({ message: "No resume text provided" });
     }
 
-    const systemPrompt =
-      "You are an expert AI agent to extract data from resume.";
-    const userPrompt = `extract data from this resume: ${resumeText}. If (professional_summary) field is missing or undefined then fill them too which is most suitable fo it.
-    Provide data in the following JSON format with no additional text before or after:
-      professional_summary: {
-        type: String,
-        default: "",
-      },
-      skills: [
-        {
-          type: String,
-        },
-      ],
-      personal_info: {
-        image: { type: String, default: "" },
-        profession: { type: String, default: "" },
-        full_name: { type: String, default: "" },
-        email: { type: String, default: "" },
-        phone: { type: String, default: "" },
-        location: { type: String, default: "" },
-        website: { type: String, default: "" },
-      },
-      experience: [
-        {
-          company: { type: String },
-          position: { type: String },
-          start_date: { type: String },
-          end_date: { type: String },
-          description: { type: String },
-          is_current: { type: Boolean },
-        },
-      ],
-      projects: [
-        {
-          name: { type: String },
-          type: { type: String },
-          description: { type: String },
-        },
-      ],
-      education: [
-        {
-          institution: { type: String },
-          degree: { type: String },
-          graduation_date: { type: String },
-          field: { type: String },
-          gpa: { type: String },
-        }`;
-
-    const response = await gemini.chat.completions.create({
-      model: process.env.GEMINI_MODEL,
+    const chatCompletion = await groq.chat.completions.create({
       messages: [
-        { role: "system", content: systemPrompt },
+        {
+          role: "system",
+          content:
+            "You are a professional data extractor. Convert raw text into a clean JSON object. Do not include prose.",
+        },
         {
           role: "user",
-          content: userPrompt,
+          content: `Extract from this text: "${resumeText}"
+          Return strictly as JSON:
+          {
+            "personalInfo": { "fullName": "string", "email": "string", "phone": "string", "location": "string" },
+            "summary": "string",
+            "skills": ["string"],
+            "experience": [{ "company": "string", "role": "string", "desc": "string" }],
+            "education": [{ "school": "string", "degree": "string" }]
+          }`,
         },
       ],
+      model: "llama-3.3-70b-versatile",
       response_format: { type: "json_object" },
     });
-    const aiContent = response.choices[0].message.content;
-    const parsedData = JSON.parse(aiContent);
-    const newResume = await Resume.create({ userId, title, ...parsedData });
 
-    res.json({ resumeId: newResume._id });
+    const aiContent = chatCompletion.choices[0]?.message?.content;
+    const cleanJson = aiContent.replace(/```json|```/g, "").trim();
+    const parsedData = JSON.parse(cleanJson);
+
+    const newResume = await Resume.create({
+      userId,
+      title: title || "Imported Resume",
+      ...parsedData,
+    });
+
+    return res.status(201).json({
+      message: "Resume processed successfully",
+      resumeId: newResume._id,
+    });
   } catch (error) {
-    return res.status(400).json({ message: error.message });
+    console.error("❌ Extraction Error:", error.message);
+    if (!res.headersSent) {
+      return res.status(500).json({ message: "Failed to parse resume text" });
+    }
+  }
+};
+
+/**
+ * 4. Check ATS Score
+ * Compares CV text against JD and returns a score + feedback.
+ */
+export const checkATSScore = async (req, res) => {
+  try {
+    const { jobDescription, cvText } = req.body;
+
+    if (!jobDescription || !cvText) {
+      return res.status(400).json({ message: "Missing JD or CV content" });
+    }
+
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a highly accurate ATS. Analyze the match and return strictly a JSON object.",
+        },
+        {
+          role: "user",
+          content: `JD: ${jobDescription}\nResume: ${cvText}
+          Return strictly as JSON:
+          {
+            "score": number,
+            "missingKeywords": ["string"],
+            "strengths": ["string"],
+            "weaknesses": ["string"],
+            "suggestions": ["string"]
+          }`,
+        },
+      ],
+      model: "llama-3.3-70b-versatile",
+      response_format: { type: "json_object" },
+    });
+
+    const aiContent = completion.choices[0]?.message?.content;
+    const cleanJson = aiContent.replace(/```json|```/g, "").trim();
+    const parsedAnalysis = JSON.parse(cleanJson);
+
+    return res.status(200).json({ analysis: parsedAnalysis });
+  } catch (error) {
+    console.error("❌ ATS Score Error:", error.message);
+    if (!res.headersSent) {
+      return res.status(500).json({ message: "AI Analysis failed" });
+    }
   }
 };
