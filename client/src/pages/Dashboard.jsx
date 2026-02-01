@@ -13,6 +13,7 @@ import { useSelector } from "react-redux";
 import api from "../configs/api";
 import toast from "react-hot-toast";
 import pdfToText from "react-pdftotext";
+
 import ATSResultsUI from "../components/ATSResultsUI";
 
 const Dashboard = () => {
@@ -35,6 +36,9 @@ const Dashboard = () => {
   const [jobDescription, setJobDescription] = useState("");
   const [atsResumeFile, setAtsResumeFile] = useState(null);
 
+  const [showTailorModal, setShowTailorModal] = useState(false);
+  const [targetJD, setTargetJD] = useState("");
+
   const colors = ["#9333ea", "#d97706", "#dc2626", "#0284c7", "#16a34a"];
 
   const loadAllResume = useCallback(async () => {
@@ -49,6 +53,26 @@ const Dashboard = () => {
   useEffect(() => {
     if (token) loadAllResume();
   }, [token, loadAllResume]);
+
+  const handleTailor = async (jd) => {
+    setIsLoading(true);
+    try {
+      // We send the 'atsData' or the specific resume object you want to tailor
+      const { data } = await api.post("/api/ai/tailor", {
+        resumeData: allResumes[0], // Or pass the specific resume object
+        jobDescription: jd,
+      });
+
+      // Option A: Update local state to show the preview
+      setAtsData(data.tailored);
+      toast.success("Resume tailored! Review the changes below.");
+      setShowTailorModal(false);
+    } catch (error) {
+      toast.error("Tailoring failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // --- FIXED ATS LOGIC ---
   const handleCheckATS = async (event) => {
@@ -246,6 +270,56 @@ const Dashboard = () => {
             </div>
           ))}
         </div>
+
+        {showTailorModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-xl w-full p-8 shadow-xl">
+              <div className="flex justify-between mb-4">
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <Wand2Icon className="text-purple-600" />
+                  AI One-Click Tailor
+                </h2>
+                <XIcon
+                  className="cursor-pointer"
+                  onClick={() => setShowTailorModal(false)}
+                />
+              </div>
+              <p className="text-slate-500 mb-6 text-sm">
+                Paste the Job Description below. AI will rewrite your summary
+                and experience to match the role's specific needs.
+              </p>
+
+              <div className="space-y-4">
+                <textarea
+                  className="w-full h-64 p-4 border border-slate-200 rounded-xl resize-none focus:ring-2 focus:ring-purple-500 outline-none text-sm"
+                  placeholder="Paste the target Job Description here..."
+                  value={targetJD}
+                  onChange={(e) => setTargetJD(e.target.value)}
+                />
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowTailorModal(false)}
+                    className="flex-1 py-3 border border-slate-200 rounded-xl font-semibold text-slate-600 hover:bg-slate-50 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleTailor(targetJD)}
+                    disabled={isLoading || !targetJD.trim()}
+                    className="flex-1 bg-purple-600 text-white py-3 rounded-xl font-bold disabled:bg-slate-300 shadow-lg shadow-purple-200 flex justify-center items-center gap-2"
+                  >
+                    {isLoading ? (
+                      <LoaderCircle className="animate-spin" size={20} />
+                    ) : (
+                      "Magic Tailor ✨"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* --- AI Analysis Result Section --- */}
         {atsData && (

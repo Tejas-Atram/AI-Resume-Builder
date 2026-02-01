@@ -34,6 +34,7 @@ const ResumeSchema = new mongoose.Schema(
       email: { type: String, default: "" },
       phone: { type: String, default: "" },
       location: { type: String, default: "" },
+      linkedin: { type: String, default: "" },
       website: { type: String, default: "" },
     },
     experience: [
@@ -63,7 +64,7 @@ const ResumeSchema = new mongoose.Schema(
       },
     ],
   },
-  { timestamps: true, minimize: false }
+  { timestamps: true, minimize: false },
 );
 
 const Resume = mongoose.model("Resume", ResumeSchema);

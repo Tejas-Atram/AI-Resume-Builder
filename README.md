@@ -118,8 +118,8 @@ A quick overview of the main API routes available:
 
 ## �‍💻 Author
 
-**Dheeraj Sai**
-- GitHub: [@DheerajSai6](https://github.com/DheerajSai6)
+**Tejas Atram**
+- GitHub: [@Tejas-Atram](https://github.com/Tejas-Atram)
 
 ## 🙏 Acknowledgements
 

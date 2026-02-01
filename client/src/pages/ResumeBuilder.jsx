@@ -32,6 +32,7 @@ const ResumeBuilder = () => {
   const { resumeId } = useParams();
   const navigate = useNavigate();
   const { token } = useSelector((state) => state.auth);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [resumeData, setResumeData] = useState({
     _id: "",
@@ -88,15 +89,17 @@ const ResumeBuilder = () => {
     window.print();
   };
 
+  // Add this state at the top
+
   const saveChanges = async () => {
+    if (isSaving) return; // Prevent double-clicks or double-calls
+
     try {
+      setIsSaving(true);
       let updatedResumeData = structuredClone(resumeData);
 
-      // Safety check for image before deleting
-      if (
-        updatedResumeData.personal_info &&
-        typeof updatedResumeData.personal_info.image === "object"
-      ) {
+      // Clean up image object from nested data to keep JSON payload light
+      if (updatedResumeData.personal_info?.image instanceof Object) {
         delete updatedResumeData.personal_info.image;
       }
 
@@ -106,22 +109,21 @@ const ResumeBuilder = () => {
 
       if (removeBackground) formData.append("removeBackground", "yes");
 
-      if (
-        resumeData.personal_info?.image &&
-        typeof resumeData.personal_info.image === "object"
-      ) {
+      // Only append the file if it's a new upload (an object/File)
+      if (resumeData.personal_info?.image instanceof File) {
         formData.append("image", resumeData.personal_info.image);
       }
 
-      const { data } = await api.put("/api/resumes/update", formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // INTERCEPTOR handles headers, so we keep this clean
+      const { data } = await api.put("/api/resumes/update", formData);
 
       setResumeData(data.resume);
-      toast.success(data.message || "Changes saved!");
+      toast.success(data.message || "Changes saved!", { id: "save-logic" });
     } catch (error) {
       console.error("Error saving resume:", error);
-      toast.error("Failed to save changes.");
+      toast.error("Failed to save changes.", { id: "save-logic" });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -137,7 +139,7 @@ const ResumeBuilder = () => {
         </Link>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 pb-8">
+      <div className="resume-container max-w-7xl mx-auto px-4 pb-8">
         <div className="grid lg:grid-cols-12 gap-8">
           {/* Left Panel - Form */}
           <div className="relative lg:col-span-5 rounded-lg overflow-hidden">
@@ -265,7 +267,7 @@ const ResumeBuilder = () => {
                     error: "Error saving resume.",
                   })
                 }
-                className="w-full bg-slate-800 text-white rounded-md px-6 py-2 mt-6 text-sm font-semibold hover:bg-slate-700 transition-all"
+                className="no-print w-full bg-slate-800 text-white rounded-md px-6 py-2 mt-6 text-sm font-semibold hover:bg-slate-700 transition-all"
               >
                 Save Changes
               </button>
@@ -277,7 +279,7 @@ const ResumeBuilder = () => {
             <div className="flex justify-end mb-4">
               <button
                 onClick={downloader}
-                className="flex items-center gap-2 px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all shadow-sm"
+                className=" no-print flex items-center gap-2 px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all shadow-sm"
               >
                 <Download className="size-4" />
                 Download PDF
